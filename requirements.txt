@@ -1,2 +1,13 @@
 PyAudio==0.2.14
 requests==2.31.0
+
+# Notas de instalación:
+# 
+# Para Linux/Ubuntu/Raspberry Pi:
+# sudo apt install -y python3-tk python3-pyaudio portaudio19-dev
+#
+# Para macOS:
+# brew install portaudio
+#
+# Para Windows:
+# Instalar VLC desde https://www.videolan.org/vlc/
