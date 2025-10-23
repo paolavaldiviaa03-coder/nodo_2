@@ -423,13 +423,53 @@ if __name__ == "__main__":
         if archivo_mp3 and os.path.exists(archivo_mp3):
             print("\n🔊 PASO 6: Reproducción automática")
             print(f"Reproduciendo tu voz clonada: {archivo_mp3}")
-            try:
-                abrir_archivo(archivo_mp3)
-                print("🎵 Audio reproduciéndose automáticamente...")
-                time.sleep(3)  # Dar tiempo para que inicie la reproducción
-            except Exception as e:
-                print(f"⚠️ Error al reproducir automáticamente: {e}")
-                print("   Puedes reproducir manualmente el archivo generado")
+            
+            # Detectar si estamos en Linux/Raspberry Pi
+            if sys.platform.startswith('linux'):
+                # En Linux: reproducir audio + video warning simultáneamente
+                warning_video = 'warning.mp4'
+                if os.path.exists(warning_video):
+                    print(f"🚨 Reproduciendo warning.mp4 simultáneamente...")
+                    try:
+                        # Reproducir video warning en background
+                        video_process = subprocess.Popen(['xdg-open', warning_video])
+                        time.sleep(1)  # Pequeña pausa para que inicie el video
+                        
+                        # Reproducir audio con mpg123 o aplay
+                        print(f"🎵 Reproduciendo audio clonado...")
+                        try:
+                            # Intentar con mpg123 primero (mejor para MP3)
+                            audio_process = subprocess.Popen(['mpg123', archivo_mp3])
+                            audio_process.wait()  # Esperar a que termine el audio
+                        except FileNotFoundError:
+                            # Si no hay mpg123, intentar con aplay
+                            try:
+                                audio_process = subprocess.Popen(['aplay', archivo_mp3])
+                                audio_process.wait()
+                            except FileNotFoundError:
+                                # Fallback: usar xdg-open para el audio también
+                                subprocess.Popen(['xdg-open', archivo_mp3])
+                                time.sleep(5)  # Tiempo estimado de reproducción
+                        
+                        print("🎬 Reproducción simultánea completada")
+                        
+                    except Exception as e:
+                        print(f"⚠️ Error en reproducción simultánea: {e}")
+                        print("   Intentando reproducción simple...")
+                        abrir_archivo(archivo_mp3)
+                else:
+                    print(f"⚠️ Archivo {warning_video} no encontrado. Solo reproduciendo audio...")
+                    abrir_archivo(archivo_mp3)
+                    time.sleep(3)
+            else:
+                # En macOS/Windows: solo reproducir el audio como antes
+                try:
+                    abrir_archivo(archivo_mp3)
+                    print("🎵 Audio reproduciéndose automáticamente...")
+                    time.sleep(3)
+                except Exception as e:
+                    print(f"⚠️ Error al reproducir automáticamente: {e}")
+                    print("   Puedes reproducir manualmente el archivo generado")
         
         # RESULTADO FINAL
         print("\n" + "="*70)
