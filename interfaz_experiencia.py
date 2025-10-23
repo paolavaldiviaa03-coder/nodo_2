@@ -91,7 +91,7 @@ class ExperienciaVozApp:
         title_frame.pack_propagate(False)
         
         title_label = ttk.Label(title_frame, 
-                               text="EXPERIENCIA DE CLONACIÓN DE VOZ", 
+                               text="EXPERIENCIA NODO 2", 
                                style='FullTitle.TLabel')
         title_label.pack(pady=(30, 10))
         
@@ -126,7 +126,7 @@ class ExperienciaVozApp:
         
         # Botón principal centrado
         self.start_button = ttk.Button(bottom_frame, 
-                                      text="🚀 INICIAR EXPERIENCIA", 
+                                      text=" INICIAR EXPERIENCIA", 
                                       style='FullButton.TButton',
                                       command=self.iniciar_experiencia)
         self.start_button.pack(pady=10)
@@ -203,6 +203,158 @@ class ExperienciaVozApp:
         thread = threading.Thread(target=self.ejecutar_experiencia)
         thread.daemon = True
         thread.start()
+        
+    def ejecutar_experiencia(self):
+        """Ejecutar la experiencia completa de clonación de voz"""
+        try:
+            self.actualizar_status("🎬 Iniciando experiencia...")
+            
+            # Crear instancia del clonador
+            self.voice_cloner = VoiceCloner()
+            
+            # PASO 1: Reproducir video en área central
+            self.actualizar_status("📹 Reproduciendo video de instrucciones...")
+            self.mostrar_video_en_area(True)
+            self.reproducir_video_integrado()
+            
+            # PASO 2: Countdown
+            self.actualizar_status("⏱️ Preparando grabación...")
+            self.mostrar_video_en_area(True, "⏱️\n\nPREPARÁNDOTE PARA GRABAR\n\nLa grabación iniciará en unos segundos")
+            
+            # Countdown de 12 segundos
+            for i in range(12, 0, -1):
+                self.actualizar_status(f"🎙️ Grabación comenzará en {i} segundos...")
+                self.mostrar_video_en_area(True, f"⏱️\n\nGRABACIÓN EN\n\n{i}\n\nSegundos")
+                time.sleep(1)
+            
+            # PASO 3: Grabación
+            self.actualizar_status("🔴 GRABANDO VOZ - Habla ahora...")
+            archivo_voz = self.grabar_voz_con_visual()
+            
+            if not archivo_voz:
+                raise Exception("Error en la grabación de voz")
+                
+            # PASO 4: Clonación
+            self.actualizar_status("☁️ Subiendo voz para clonación...")
+            self.mostrar_video_en_area(True, "☁️\n\nSUBIENDO TU VOZ\n\nEspera mientras procesamos tu grabación")
+            voice_id = self.voice_cloner.clonar_voz(archivo_voz)
+            
+            if not voice_id:
+                raise Exception("Error al clonar la voz")
+                
+            # PASO 5: Síntesis
+            self.actualizar_status("🤖 Generando voz clonada...")
+            self.mostrar_video_en_area(True, "🤖\n\nCLONANDO TU VOZ\n\nLa IA está aprendiendo tu voz...")
+            archivo_final = self.voice_cloner.sintetizar_voz(voice_id)
+            
+            if not archivo_final:
+                raise Exception("Error al sintetizar la voz")
+                
+            # PASO 6: Reproducción
+            self.actualizar_status("🔊 Reproduciendo resultado...")
+            self.mostrar_video_en_area(True, "🔊\n\nESCUCHA EL RESULTADO\n\nTu voz clonada está reproduciéndose")
+            self.voice_cloner.reproducir_resultado(archivo_final)
+            
+            # PASO 7: Limpieza
+            self.actualizar_status("🗑️ Limpiando datos temporales...")
+            self.mostrar_video_en_area(True, "🗑️\n\nELIMINANDO DATOS\n\nTu voz se está eliminando de los servidores")
+            self.voice_cloner.limpiar_voz(voice_id)
+            
+            # Completado
+            self.actualizar_status("✅ ¡Experiencia completada con éxito!")
+            self.mostrar_video_en_area(True, "🎉\n\n¡EXPERIENCIA COMPLETADA!\n\nTu voz ha sido clonada exitosamente\ny eliminada de nuestros servidores")
+            
+            messagebox.showinfo(
+                "¡Experiencia Completada!", 
+                "Tu voz ha sido clonada exitosamente.\n\n" +
+                "Recuerda que tu voz original ha sido eliminada\n" +
+                "de nuestros servidores por privacidad.\n\n" +
+                "¡Gracias por participar en nuestro experimento!"
+            )
+            
+        except Exception as e:
+            self.actualizar_status(f"❌ Error: {str(e)}")
+            self.mostrar_video_en_area(True, f"❌\n\nERROR\n\n{str(e)[:50]}...\n\nInténtalo de nuevo")
+            messagebox.showerror(
+                "Error en la Experiencia", 
+                f"Ocurrió un error durante la experiencia:\n\n{str(e)}\n\n" +
+                "Por favor, inténtalo de nuevo o contacta al administrador."
+            )
+            
+        finally:
+            # Restaurar interfaz
+            self.mostrar_progreso(False)
+            self.start_button.config(state='normal')
+            self.proceso_activo = False
+            self.mostrar_video_en_area(False)
+            
+    def reproducir_video_integrado(self):
+        """Reproducir video en una ventana externa posicionada sobre el área de video"""
+        video_file = 'instrucciones.mp4'
+        
+        if not os.path.exists(video_file):
+            self.mostrar_video_en_area(True, "⚠️\n\nVIDEO NO ENCONTRADO\n\nContinuando sin video...")
+            time.sleep(3)
+            return
+            
+        try:
+            # Calcular posición del área de video
+            video_area_x = 100
+            video_area_y = 170  # Título + padding
+            video_area_width = self.screen_width - 200
+            video_area_height = self.screen_height - 350  # Espacio para título y botón
+            
+            # Comando para reproducir video en posición específica
+            if sys.platform.startswith('linux'):
+                # En Linux, usar vlc con posición específica
+                cmd = [
+                    'vlc', '--intf', 'dummy', '--no-video-title',
+                    '--video-x', str(video_area_x),
+                    '--video-y', str(video_area_y),
+                    '--width', str(video_area_width),
+                    '--height', str(video_area_height),
+                    '--play-and-exit', video_file
+                ]
+            elif sys.platform == 'darwin':
+                # En macOS
+                cmd = ['open', video_file]
+            else:
+                # En Windows
+                cmd = [video_file]
+                
+            self.video_process = subprocess.Popen(cmd, 
+                                                 stdout=subprocess.DEVNULL, 
+                                                 stderr=subprocess.DEVNULL)
+            
+            # Esperar a que termine el video o timeout
+            try:
+                self.video_process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                self.video_process.terminate()
+                
+        except Exception as e:
+            print(f"Error reproduciendo video: {e}")
+            self.mostrar_video_en_area(True, "⚠️\n\nERROR DE VIDEO\n\nContinuando sin video...")
+            time.sleep(3)
+            
+    def grabar_voz_con_visual(self):
+        """Grabar voz con indicador visual en tiempo real"""
+        self.mostrar_video_en_area(True, "🔴\n\nGRABANDO\n\n¡HABLA AHORA!")
+        
+        # Simulación visual de grabación
+        for segundo in range(13):
+            tiempo_restante = 13 - segundo
+            self.actualizar_status(f"🔴 GRABANDO... {tiempo_restante} segundos restantes")
+            self.mostrar_video_en_area(True, f"🔴\n\nGRABANDO\n\n{tiempo_restante}\n\nSegundos restantes")
+            
+            if segundo == 0:
+                # Ejecutar grabación real
+                archivo = self.voice_cloner.grabar_voz()
+                time.sleep(1)
+            else:
+                time.sleep(1)
+                
+        return archivo if 'archivo' in locals() else None
             
     def salir_aplicacion(self):
         """Cerrar la aplicación con confirmación"""
