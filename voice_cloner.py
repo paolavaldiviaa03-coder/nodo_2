@@ -204,37 +204,55 @@ class VoiceCloner:
             return None
             
     def esperar_voz_lista(self, voice_id):
-        """Esperar a que la voz esté lista para usar"""
+        """Esperar a que la voz esté lista para usar con timeout extendido"""
         print("⏳ Esperando a que la voz esté lista...")
         
         headers = {"xi-api-key": self.API_KEY}
-        max_intentos = 30
+        max_intentos = 60  # Aumentado de 30 a 60 (2 minutos)
+        tiempo_espera = 3  # Aumentado de 2 a 3 segundos
         
         for intento in range(max_intentos):
             try:
-                response = requests.get(f"{self.URL_GET_VOICES}/{voice_id}", headers=headers)
+                print(f"   🔍 Verificando estado... ({intento + 1}/{max_intentos})")
+                response = requests.get(f"{self.URL_GET_VOICES}/{voice_id}", headers=headers, timeout=10)
                 
                 if response.status_code == 200:
                     voice_data = response.json()
                     status = voice_data.get('status', 'unknown')
                     
-                    print(f"   Estado de la voz: {status} (intento {intento + 1}/{max_intentos})")
+                    print(f"   📊 Estado actual: {status}")
                     
                     if status == 'ready':
                         print("✅ Voz lista para sintetizar")
                         return voice_id
-                        
-                    time.sleep(2)
+                    elif status == 'failed':
+                        print("❌ La clonación de voz falló en el servidor")
+                        return None
+                    elif status in ['processing', 'training']:
+                        print(f"   🔄 Procesando... quedan {max_intentos - intento - 1} intentos")
+                    
+                    time.sleep(tiempo_espera)
                     
                 else:
                     print(f"⚠️ Error al verificar estado: {response.status_code}")
-                    time.sleep(2)
+                    if intento < 5:  # Solo reintentar los primeros 5 errores
+                        time.sleep(tiempo_espera)
+                    else:
+                        print("❌ Demasiados errores de conexión")
+                        return None
                     
+            except requests.exceptions.Timeout:
+                print(f"⚠️ Timeout en intento {intento + 1}")
+                time.sleep(tiempo_espera)
             except Exception as e:
                 print(f"⚠️ Error en verificación: {e}")
-                time.sleep(2)
+                time.sleep(tiempo_espera)
                 
-        print("❌ Timeout: la voz no estuvo lista a tiempo")
+        print("❌ Timeout: la voz no estuvo lista después de 3 minutos")
+        print("   Esto puede ocurrir si:")
+        print("   - El servidor está sobrecargado")
+        print("   - La grabación tiene problemas de calidad")
+        print("   - Hay problemas de conectividad")
         return None
         
     def sintetizar_voz(self, voice_id):

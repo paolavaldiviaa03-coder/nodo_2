@@ -1,13 +1,17 @@
 PyAudio==0.2.14
 requests==2.31.0
 
+# Dependencias opcionales para video integrado (no requeridas para funcionamiento básico):
+# opencv-python==4.8.1.78
+# Pillow==10.0.1
+
 # Notas de instalación:
 # 
 # Para Linux/Ubuntu/Raspberry Pi:
-# sudo apt install -y python3-tk python3-pyaudio portaudio19-dev
+# sudo apt install -y python3-tk python3-pyaudio portaudio19-dev vlc
 #
 # Para macOS:
-# brew install portaudio
+# brew install portaudio vlc
 #
 # Para Windows:
 # Instalar VLC desde https://www.videolan.org/vlc/
