@@ -386,7 +386,8 @@ if __name__ == "__main__":
     print("3. 🎤 Graba tu voz (13 segundos)")
     print("4. ☁️  Clona tu voz en ElevenLabs")
     print("5. 🎵 Sintetiza frase final con tu voz clonada")
-    print("6. 🧹 Limpia recursos temporales")
+    print("6. 🔊 Reproduce automáticamente el resultado")
+    print("7. 🧹 Limpia recursos temporales")
     print("="*70)
     
     try:
@@ -418,6 +419,18 @@ if __name__ == "__main__":
         print("\n🧹 PASO 5: Limpieza")
         eliminar_voz_clonada(voice_id)
         
+        # PASO 6: Reproducción automática del resultado
+        if archivo_mp3 and os.path.exists(archivo_mp3):
+            print("\n🔊 PASO 6: Reproducción automática")
+            print(f"Reproduciendo tu voz clonada: {archivo_mp3}")
+            try:
+                abrir_archivo(archivo_mp3)
+                print("🎵 Audio reproduciéndose automáticamente...")
+                time.sleep(3)  # Dar tiempo para que inicie la reproducción
+            except Exception as e:
+                print(f"⚠️ Error al reproducir automáticamente: {e}")
+                print("   Puedes reproducir manualmente el archivo generado")
+        
         # RESULTADO FINAL
         print("\n" + "="*70)
         if archivo_mp3 and os.path.exists(archivo_mp3):
@@ -426,9 +439,11 @@ if __name__ == "__main__":
             print(f"📁 Archivos generados:")
             print(f"   • Audio original grabado: {archivo_audio}")
             print(f"   • Tu voz clonada sintetizando texto: {archivo_mp3} ({size_kb:.1f} KB)")
-            print(f"\n💡 Para reproducir el resultado:")
+            print(f"\n� El audio se está reproduciendo automáticamente!")
+            print(f"�💡 Para reproducir nuevamente:")
             print(f"   mpg123 '{archivo_mp3}'  # En Linux")
             print(f"   afplay '{archivo_mp3}'  # En macOS")
+            print(f"   Doble clic en el archivo  # En cualquier OS")
             print(f"\n🎯 QUE DEBERÍAS ESCUCHAR:")
             print(f"   El archivo MP3 debe contener tu PROPIA VOZ diciendo:")
             print(f"   '{TEXTO_FINAL[:80]}...'")
