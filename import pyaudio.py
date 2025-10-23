@@ -20,11 +20,11 @@ import requests
 # CONFIGURACIÓN
 # =====================================================
 API_KEY = "8007664948e8dd45023e33e533ca8c3782511d7d62913ee436b83bc36ea16746" 
-TEXTO_FINAL = "Hola, esta es mi voz clonada usando inteligencia artificial. Como puedes escuchar, suena exactamente igual que cuando hablé durante la grabación. Es increíble cómo la tecnología puede replicar mi manera de hablar, mi tono y mi acento de forma tan precisa."
+TEXTO_FINAL = "Gracias por regalarnos tu voz, ahora tengo el poder de hablar como tú, usarla para los fines que quiera, porque ahora es propiedad de nodo 2."
 ARCHIVO_FINAL = "frase_final_clonada.mp3"
 VIDEO_FILE = 'instrucciones.mp4'
 FILENAME = "voz_sample.wav"
-DURATION_SECONDS = 30  # Duración de la grabación
+DURATION_SECONDS = 13  # Duración de la grabación
 CHUNK = 1024           # Buffer de audio por iteración
 FORMAT = pyaudio.paInt16 # Formato de 16 bits
 CHANNELS = 1           # Grabar en mono
@@ -107,9 +107,8 @@ def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS, input_d
         
         print(f"🎤 GRABANDO por {duration} segundos...")
         print("Texto sugerido: 'Hola, soy yo, y estoy haciendo esta grabación para crear")
-        print("mi voz digital. Me encanta cómo la tecnología puede capturar cada detalle,'")
-        print("cada tono, y transformarlo en algo único. Espero que esta versión suene")
-        print("tan natural y auténtica como yo.'")
+        print("mi voz digital. Me encanta cómo la tecnología puede capturar cada detalle.'")
+        print("IMPORTANTE: Habla CLARO y FUERTE durante todos los segundos.")
         print("-" * 60)
         
         frames = []
@@ -383,18 +382,25 @@ if __name__ == "__main__":
     print("="*70)
     print("Este programa:")
     print("1. 📹 Reproduce video de instrucciones")
-    print("2. 🎤 Graba tu voz (30 segundos)")
-    print("3. ☁️  Clona tu voz en ElevenLabs")
-    print("4. 🎵 Sintetiza frase final con tu voz clonada")
-    print("5. 🧹 Limpia recursos temporales")
+    print("2. ⏱️ Cuenta regresiva automática de 12 segundos")
+    print("3. 🎤 Graba tu voz (13 segundos)")
+    print("4. ☁️  Clona tu voz en ElevenLabs")
+    print("5. 🎵 Sintetiza frase final con tu voz clonada")
+    print("6. 🧹 Limpia recursos temporales")
     print("="*70)
     
     try:
         # PASO 1: Reproducir video de instrucciones
         print("\n📹 PASO 1: Video de instrucciones")
         video_ok = reproducir_video_instrucciones()
-        if video_ok:
-            input("Presiona ENTER cuando hayas visto el video y estés listo para grabar...")
+        
+        # PASO 1.5: Cuenta regresiva automática de 12 segundos
+        print("\n⏱️ PREPARACIÓN: Cuenta regresiva para la grabación")
+        print("El video se está reproduciendo. La grabación comenzará automáticamente en:")
+        for i in range(12, 0, -1):
+            print(f"   🕐 {i} segundos...", end='\r', flush=True)
+            time.sleep(1)
+        print("   🎬 ¡COMENZANDO GRABACIÓN!    ")  # Espacios extra para limpiar la línea
         
         # PASO 2: Grabar audio
         print("\n🎤 PASO 2: Grabación de audio")
