@@ -2,6 +2,9 @@ import pyaudio
 import wave
 import time
 import os
+import sys
+import subprocess
+import requests
 
 API_KEY = "8007664948e8dd45023e33e533ca8c3782511d7d62913ee436b83bc36ea16746" 
 URL_BASE_API = "https://elevenlabs.io/app/voice-lab" 
@@ -13,15 +16,21 @@ if not os.path.exists(VIDEO_FILE):
 else:
     print(f"▶️ Abriendo: {VIDEO_FILE} con el reproductor predeterminado del sistema.")  
     try:
-        # Usa os.startfile() para abrir el archivo con el programa asociado.
-        # Esto iniciará VLC, Windows Media Player, o el qu  e tengas por defecto.
-        os.startfile(VIDEO_FILE)
-        
+        # Abrir el archivo con la aplicación por defecto de forma multiplataforma.
+        def abrir_archivo(path):
+            """Abrir archivo en el sistema: Windows uses os.startfile, macOS uses `open`, Linux uses `xdg-open`."""
+            if sys.platform.startswith('win'):
+                return os.startfile(path)
+            elif sys.platform == 'darwin':
+                return subprocess.Popen(['open', path])
+            else:
+                # Asumimos Linux/Unix
+                return subprocess.Popen(['xdg-open', path])
+
+        abrir_archivo(VIDEO_FILE)
         # Le da tiempo al reproductor para que se inicie
-        time.sleep(2) 
-        
+        time.sleep(2)
         print("El script de Python ha terminado. El video se está reproduciendo en una ventana externa.")
-        
     except Exception as e:
         print(f"Ocurrió un error al intentar abrir el archivo: {e}")
 FILENAME = "voz_sample.wav"
@@ -31,7 +40,7 @@ FORMAT = pyaudio.paInt16 # Formato de 16 bits (calidad estándar)
 CHANNELS = 1           # Grabar en mono
 RATE = 44100           # Frecuencia de muestreo (44.1 kHz, estándar de CD)
 
-def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS):
+def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS, input_device_index=None):
     """
     Función que inicializa el micrófono, graba durante la duración especificada 
     y guarda el audio en un archivo WAV.
@@ -39,11 +48,23 @@ def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS):
     # Inicializa PyAudio
     p = pyaudio.PyAudio()
 
+    # Si no se especifica device index, listar dispositivos para ayudar al usuario (útil en Raspberry Pi)
+    if input_device_index is None:
+        info = p.get_host_api_info_by_index(0)
+        numdevices = info.get('deviceCount')
+        print("Dispositivos de audio disponibles:")
+        for i in range(0, numdevices):
+            dev = p.get_device_info_by_host_api_device_index(0, i)
+            if dev.get('maxInputChannels') > 0:
+                print(f"  Index {i}: {dev.get('name')}")
+        print("Si el micrófono no está en el index por defecto, vuelva a ejecutar la función pasando input_device_index=<numero>\n")
+
     # Abrir el stream de audio para la entrada (micrófono)
     stream = p.open(format=FORMAT,
                     channels=CHANNELS,
                     rate=RATE,
                     input=True,
+                    input_device_index=input_device_index,
                     frames_per_buffer=CHUNK)
     
     print("-" * 50)
