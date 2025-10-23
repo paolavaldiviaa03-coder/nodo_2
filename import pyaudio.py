@@ -174,11 +174,18 @@ def clonar_y_sintetizar_usuario(audio_sample_path, texto_a_sintetizar):
             data=data_upload, 
             files=files
         )
-        response_upload.raise_for_status() 
-        
-        voice_id_temporal = response_upload.json().get('voice_id')
+        response_upload.raise_for_status()
+
+        upload_json = response_upload.json()
+        print(f"[IA] Response upload: {upload_json}")
+
+        voice_id_temporal = upload_json.get('voice_id') or upload_json.get('id')
+        if not voice_id_temporal:
+            print("⚠️ No se obtuvo voice_id tras la subida. Respuesta completa:", upload_json)
+            return None, None
+
         print(f"[IA] Voz subida. ID Temporal creado: {voice_id_temporal}")
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ ERROR al subir la voz: {e}")
         return None, None # Devolvemos None si falla
@@ -207,20 +214,53 @@ def clonar_y_sintetizar_usuario(audio_sample_path, texto_a_sintetizar):
         }
     }
 
+    # Polling: verificar que la voz esté lista antes de pedir síntesis (timeout)
+    check_url = f"{URL_DELETE_VOICE}{voice_id_temporal}"
+    ready = False
+    max_wait = 60  # segundos
+    waited = 0
+    interval = 5
+    print(f"[IA] Esperando a que la voz clonada ({voice_id_temporal}) esté lista (timeout {max_wait}s)...")
+    while waited < max_wait:
+        try:
+            r_check = requests.get(check_url, headers=headers_upload)
+            if r_check.status_code == 200:
+                info = r_check.json()
+                # Intentar detectar un campo que indique readiness
+                state = info.get('status') or info.get('state') or info.get('voice_state')
+                print(f"[IA] Estado voice check: {state}")
+                if state and str(state).lower() in ('ready', 'processed', 'available'):
+                    ready = True
+                    break
+            else:
+                print(f"[IA] check returned {r_check.status_code}: {r_check.text}")
+        except Exception as e:
+            print(f"[IA] Error consultando estado de la voz: {e}")
+
+        time.sleep(interval)
+        waited += interval
+
+    if not ready:
+        print("⚠️ Tiempo de espera excedido o voz no lista. Intentaremos la síntesis de todas formas (puede fallar o producir audio corto).")
+
     try:
         response_synthesis = requests.post(
             f"{URL_TTS}{voice_id_temporal}", 
             headers=headers_synthesis, 
             json=data_synthesis
         )
-        response_synthesis.raise_for_status() 
-        
+        response_synthesis.raise_for_status()
+
+        # Verificar contenido mínimo antes de escribir
+        if len(response_synthesis.content) < 2000:
+            print(f"⚠️ Atención: El MP3 recibido es muy pequeño ({len(response_synthesis.content)} bytes). Podría ser solo una frase corta o un archivo inválido.")
+
         # Guardar el archivo de audio recibido (el MP3)
         with open(ARCHIVO_FINAL, 'wb') as f:
             f.write(response_synthesis.content)
-            
-        print(f"✅ Éxito IA: Frase clonada guardada como {ARCHIVO_FINAL}")
-        
+
+        print(f"✅ Éxito IA: Frase clonada guardada como {ARCHIVO_FINAL} (tamaño {os.path.getsize(ARCHIVO_FINAL)} bytes)")
+
     except requests.exceptions.RequestException as e:
         print(f"❌ ERROR al sintetizar la frase. El modelo podría no estar listo. {e}")
         # Asegúrate de eliminar la voz aunque la síntesis falle
