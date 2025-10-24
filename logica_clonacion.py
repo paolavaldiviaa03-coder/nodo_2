@@ -125,6 +125,9 @@ class LogicaClonacion:
             
             print(f"\n✅ GRABACIÓN FINALIZADA")
             
+            # Obtener sample_width ANTES de cerrar PyAudio
+            sample_width = p.get_sample_size(self.FORMAT)
+            
             # Cerrar stream
             stream.stop_stream()
             stream.close()
@@ -133,7 +136,7 @@ class LogicaClonacion:
             # Guardar archivo WAV
             with wave.open(self.FILENAME, 'wb') as wf:
                 wf.setnchannels(self.CHANNELS)
-                wf.setsampwidth(p.get_sample_size(self.FORMAT))
+                wf.setsampwidth(sample_width)
                 wf.setframerate(self.RATE)
                 wf.writeframes(b''.join(frames))
             
