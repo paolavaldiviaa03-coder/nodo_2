@@ -173,7 +173,7 @@ class ExperienciaVozApp:
             
             # PASO 2: Countdown
             # Countdown de 12 segundos
-            for i in range(12, 0, -1):
+            for i in range(25, 0, -1):
                 time.sleep(1)
             
             # PASO 3: Grabación
@@ -246,8 +246,8 @@ class ExperienciaVozApp:
             
             # Mostrar indicador visual mientras reproduce
             self.video_label.configure(
-                text="🎬\n\nREPRODUCIENDO VIDEO\n\nCON AUDIO\n\n▶️ ESCUCHA LAS INSTRUCCIONES", 
-                fg='#00ff88', 
+                text="▶️ ESCUCHA LAS INSTRUCCIONES", 
+                fg="#0084b9", 
                 image=""
             )
             
