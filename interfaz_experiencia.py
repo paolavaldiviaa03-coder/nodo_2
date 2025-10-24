@@ -177,7 +177,7 @@ class ExperienciaVozApp:
             
             # Esperar 12 segundos mientras se reproduce el video
             print("⏱️ Esperando 12 segundos antes de iniciar grabación...")
-            for i in range(12, 0, -1):
+            for i in range(14, 0, -1):
                 print(f"   🎬 Video reproduciéndose... Grabación en {i}s", end='\r')
                 time.sleep(1)
             
@@ -292,16 +292,16 @@ class ExperienciaVozApp:
             # Lista de reproductores de video disponibles en orden de preferencia
             reproductores = [
                 ['omxplayer', '--no-osd', '--aspect-mode', 'letterbox'],  # Raspberry Pi específico
-                ['vlc', '--play-and-exit', '--fullscreen', '--no-video-title'],  # VLC
-                ['mpv', '--really-quiet', '--no-terminal'],  # MPV
-                ['mplayer', '-quiet', '-really-quiet'],  # MPlayer
+                ['vlc', '--intf', 'dummy', '--play-and-exit', '--no-video'],  # VLC solo audio, sin interfaz
+                ['mpv', '--really-quiet', '--no-terminal', '--no-video'],  # MPV solo audio
+                ['mplayer', '-quiet', '-really-quiet', '-novideo'],  # MPlayer solo audio
                 ['ffplay', '-nodisp', '-autoexit']  # FFmpeg player (solo audio si no hay display)
             ]
             
             # Mostrar indicador visual mientras reproduce
             self.video_label.configure(
-                text="ESCUCHA CON ATENCION", 
-                fg="#da0d0d", 
+                text="🔊 ESCUCHA EL AUDIO\n\nREPRODUCIENDO INSTRUCCIONES\n\n🎧 SOLO AUDIO", 
+                fg="#00ff88", 
                 image=""
             )
             
@@ -396,14 +396,15 @@ class ExperienciaVozApp:
         # Reproducir el video externo con audio mientras mostramos la animación
         try:
             if sys.platform == 'darwin':
-                cmd = ['open', video_file]
+                # En macOS, usar afplay para solo audio (no interfiere con la interfaz)
+                cmd = ['afplay', video_file]
             elif sys.platform.startswith('linux'):
                 # En Linux/Raspberry Pi, intentar reproductores con audio
                 reproductores = [
                     ['omxplayer', '--no-osd', video_file],
-                    ['vlc', '--play-and-exit', '--intf', 'dummy', video_file],
-                    ['mpv', '--really-quiet', video_file],
-                    ['mplayer', '-quiet', video_file]
+                    ['vlc', '--intf', 'dummy', '--play-and-exit', '--no-video', video_file],
+                    ['mpv', '--really-quiet', '--no-video', video_file],
+                    ['mplayer', '-quiet', '-novideo', video_file]
                 ]
                 
                 for cmd in reproductores:
@@ -526,11 +527,11 @@ class ExperienciaVozApp:
         """Fallback: reproducir video en ventana externa"""
         try:
             if sys.platform == 'darwin':
-                # En macOS, intentar usar QuickTime Player en modo específico
-                cmd = ['open', '-a', 'QuickTime Player', video_file]
+                # En macOS, usar afplay para solo audio (no interfiere con la interfaz)
+                cmd = ['afplay', video_file]
             elif sys.platform.startswith('linux'):
-                # En Linux, usar vlc si está disponible
-                cmd = ['vlc', '--intf', 'dummy', '--play-and-exit', video_file]
+                # En Linux, usar vlc solo para audio (sin video visible)
+                cmd = ['vlc', '--intf', 'dummy', '--play-and-exit', '--no-video', video_file]
             else:
                 # En Windows
                 cmd = ['start', video_file]
