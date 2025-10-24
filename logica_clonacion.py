@@ -51,6 +51,51 @@ class LogicaClonacion:
             print(f"Error al abrir archivo {path}: {e}")
             return None
     
+    def reproducir_solo_audio(self, archivo_audio):
+        """Reproducir audio sin mostrar ventana (solo para archivos de audio)"""
+        try:
+            if sys.platform == 'darwin':
+                # En macOS, usar afplay para solo audio
+                cmd = ['afplay', archivo_audio]
+            elif sys.platform.startswith('linux'):
+                # En Linux, intentar reproductores de audio sin interfaz
+                reproductores = [
+                    ['mpv', '--really-quiet', '--no-video', archivo_audio],
+                    ['vlc', '--intf', 'dummy', '--play-and-exit', archivo_audio],
+                    ['mplayer', '-really-quiet', archivo_audio],
+                    ['aplay', archivo_audio] if archivo_audio.endswith('.wav') else None
+                ]
+                
+                # Filtrar opciones None
+                reproductores = [r for r in reproductores if r is not None]
+                
+                # Intentar cada reproductor
+                for cmd in reproductores:
+                    try:
+                        result = subprocess.run(['which', cmd[0]], 
+                                              capture_output=True, 
+                                              timeout=1)
+                        if result.returncode == 0:
+                            break
+                    except:
+                        continue
+                else:
+                    # Fallback a reproductor por defecto
+                    cmd = ['xdg-open', archivo_audio]
+            else:
+                # Windows - usar reproductor por defecto
+                return os.startfile(archivo_audio)
+            
+            # Ejecutar comando
+            process = subprocess.Popen(cmd, 
+                                     stdout=subprocess.DEVNULL, 
+                                     stderr=subprocess.DEVNULL)
+            return process
+            
+        except Exception as e:
+            print(f"Error al reproducir audio: {e}")
+            return None
+    
     def detectar_dispositivos_audio(self):
         """Detectar y listar dispositivos de audio disponibles"""
         try:
@@ -333,19 +378,24 @@ class LogicaClonacion:
             return None
     
     def reproducir_resultado(self, archivo_mp3):
-        """Reproducir el resultado final"""
+        """Reproducir el resultado final (solo audio, sin ventana)"""
         if not archivo_mp3 or not os.path.exists(archivo_mp3):
             print(f"❌ Archivo {archivo_mp3} no encontrado")
             return False
         
         try:
             print(f"🔊 Reproduciendo resultado: {archivo_mp3}")
-            self.abrir_archivo(archivo_mp3)
+            # Usar reproductor de solo audio para no interferir con la interfaz
+            process = self.reproducir_solo_audio(archivo_mp3)
             
-            # Dar tiempo para que inicie la reproducción
-            time.sleep(3)
-            print("🎵 Audio reproduciéndose automáticamente...")
-            return True
+            if process:
+                # Dar tiempo para que inicie la reproducción
+                time.sleep(3)
+                print("🎵 Audio reproduciéndose sin ventana...")
+                return True
+            else:
+                print("⚠️ No se pudo iniciar reproductor de audio")
+                return False
             
         except Exception as e:
             print(f"❌ Error al reproducir: {e}")
