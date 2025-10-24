@@ -1,10 +1,10 @@
 # 🎤 Experiencia de Clonación de Voz - Nodo 2
 
-Una experiencia interactiva que permite a los usuarios clonar su voz usando inteligencia artificial.
+Una experiencia interactiva fullscreen que permite a los usuarios clonar su voz usando inteligencia artificial con ElevenLabs API.
 
 ## 🎯 ¿Qué hace este programa?
 
-1. **📹 Video de instrucciones**: Reproduce un video explicativo
+1. **📹 Video de instrucciones**: Reproduce video con audio (27 segundos)
 2. **🎙️ Grabación de voz**: Captura 13 segundos de audio del usuario
 3. **🤖 Clonación IA**: Usa ElevenLabs para clonar la voz
 4. **🔊 Reproducción**: Reproduce el resultado con la voz clonada
@@ -12,19 +12,25 @@ Una experiencia interactiva que permite a los usuarios clonar su voz usando inte
 
 ## 🚀 Inicio Rápido
 
-### Opción 1: Interfaz Gráfica (Recomendado)
+### ⭐ Nueva Aplicación Principal (Recomendado)
 ```bash
+# Activar entorno virtual
+source env/bin/activate  # Linux/macOS
+# o
+env\Scripts\activate     # Windows
+
+# Ejecutar aplicación principal
 python main.py
 ```
 
-### Opción 2: Solo Consola
+### 🧪 Probar Audio
 ```bash
-python voice_cloner.py
+python test_audio.py
 ```
 
-### Opción 3: Código Original
+### 🍓 Verificar Raspberry Pi (si aplica)
 ```bash
-python "import pyaudio.py"
+./check_raspberry_pi.sh
 ```
 
 ## 📋 Requisitos del Sistema
@@ -181,16 +187,24 @@ sudo yum install -y tkinter
 
 ```
 proyecto_pao/
-├── main.py                    # 🚀 Lanzador principal
-├── interfaz_experiencia.py    # 🖥️ Interfaz gráfica
-├── voice_cloner.py           # 🤖 Lógica de clonación
-├── import pyaudio.py         # 📜 Código original
-├── instrucciones.mp4         # 📹 Video explicativo
+├── main.py                    # 🚀 Archivo principal - EJECUTA ESTE
+├── interfaz_experiencia.py    # �️  Interfaz gráfica fullscreen
+├── logica_clonacion.py       # � Nueva lógica de clonación con ElevenLabs
+├── test_audio.py             # � Utilidad para probar micrófono
+├── check_raspberry_pi.sh     # 🍓 Verificación para Raspberry Pi OS
+├── instrucciones.mp4         # 🎬 Video de instrucciones (27 segundos)
+├── voice_cloner.py           # 🤖 Lógica anterior (legacy)
+├── import pyaudio.py         # 📜 Código original (legacy)
 ├── requirements.txt          # 📦 Dependencias
 ├── README.md                # 📖 Este archivo
 ├── LINUX_SETUP.md          # 🐧 Guía específica para Linux
-└── env/                     # 🌐 Entorno virtual (después de instalación)
+└── env/                     # 🌐 Entorno virtual
 ```
+
+**NUEVA ESTRUCTURA MODULAR:**
+- `main.py` → Aplicación principal con verificaciones
+- `interfaz_experiencia.py` → Interfaz gráfica mejorada
+- `logica_clonacion.py` → Lógica de clonación separada y optimizada
 
 ## 🎨 Características de la Interfaz
 

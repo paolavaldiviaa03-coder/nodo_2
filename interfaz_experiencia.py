@@ -7,14 +7,14 @@ import os
 from pathlib import Path
 import subprocess
 
-# Importar el módulo de clonación de voz
+# Importar la lógica de clonación de voz
 try:
     # Agregar el directorio actual al path para importar
     sys.path.insert(0, str(Path(__file__).parent))
-    from voice_cloner import VoiceCloner
+    from logica_clonacion import LogicaClonacion
 except ImportError as e:
-    print(f"Error al importar voice_cloner: {e}")
-    print("Asegúrate de que voice_cloner.py existe en el mismo directorio")
+    print(f"Error al importar logica_clonacion: {e}")
+    print("Asegúrate de que logica_clonacion.py existe en el mismo directorio")
     sys.exit(1)
 
 class ExperienciaVozApp:
@@ -23,7 +23,7 @@ class ExperienciaVozApp:
         self.setup_window()
         self.setup_styles()
         self.create_widgets()
-        self.voice_cloner = None
+        self.logica_clonacion = None
         self.proceso_activo = False
         self.video_process = None
         
@@ -162,7 +162,7 @@ class ExperienciaVozApp:
         """Ejecutar la experiencia completa de clonación de voz"""
         try:
             # Crear instancia del clonador
-            self.voice_cloner = VoiceCloner()
+            self.logica_clonacion = LogicaClonacion()
             
             # PASO 1: Reproducir video en área central
             # Dar tiempo para que el frame se renderice completamente
@@ -181,22 +181,22 @@ class ExperienciaVozApp:
                 raise Exception("Error en la grabación de voz")
                 
             # PASO 4: Clonación
-            voice_id = self.voice_cloner.clonar_voz(archivo_voz)
+            voice_id = self.logica_clonacion.clonar_voz(archivo_voz)
             
             if not voice_id:
                 raise Exception("Error al clonar la voz")
                 
             # PASO 5: Síntesis
-            archivo_final = self.voice_cloner.sintetizar_voz(voice_id)
+            archivo_final = self.logica_clonacion.sintetizar_voz(voice_id)
             
             if not archivo_final:
                 raise Exception("Error al sintetizar la voz")
                 
             # PASO 6: Reproducción
-            self.voice_cloner.reproducir_resultado(archivo_final)
+            self.logica_clonacion.reproducir_resultado(archivo_final)
             
             # PASO 7: Limpieza
-            self.voice_cloner.limpiar_voz(voice_id)
+            self.logica_clonacion.limpiar_voz(voice_id)
             
         except Exception as e:
             pass  # Manejo silencioso de errores
@@ -552,18 +552,9 @@ class ExperienciaVozApp:
     def grabar_voz_con_visual(self):
         """Grabar voz con indicador visual en tiempo real"""
         
-        # Simulación visual de grabación
-        for segundo in range(13):
-            tiempo_restante = 13 - segundo
-            
-            if segundo == 0:
-                # Ejecutar grabación real
-                archivo = self.voice_cloner.grabar_voz()
-                time.sleep(1)
-            else:
-                time.sleep(1)
-                
-        return archivo if 'archivo' in locals() else None
+        # Ejecutar grabación real usando la nueva lógica
+        archivo = self.logica_clonacion.grabar_voz()
+        return archivo
             
     def salir_aplicacion(self):
         """Cerrar la aplicación con confirmación"""
