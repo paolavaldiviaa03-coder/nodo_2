@@ -171,10 +171,8 @@ class ExperienciaVozApp:
             
             self.reproducir_video_integrado()
             
-            # PASO 2: Countdown
-            # Countdown de 12 segundos
-            for i in range(25, 0, -1):
-                time.sleep(1)
+            # PASO 2: Video ya terminó (las funciones de reproducción esperan)
+            # No necesitamos countdown adicional
             
             # PASO 3: Grabación
             archivo_voz = self.grabar_voz_con_visual()
@@ -246,8 +244,8 @@ class ExperienciaVozApp:
             
             # Mostrar indicador visual mientras reproduce
             self.video_label.configure(
-                text="▶️ ESCUCHA LAS INSTRUCCIONES", 
-                fg="#0084b9", 
+                text="ESCUCHA CON ATENCION", 
+                fg="#da0d0d", 
                 image=""
             )
             
@@ -272,9 +270,9 @@ class ExperienciaVozApp:
                             preexec_fn=os.setsid if hasattr(os, 'setsid') else None
                         )
                         
-                        # Esperar a que termine (máximo 20 segundos)
+                        # Esperar a que termine (máximo 30 segundos para video de 27s)
                         try:
-                            self.video_process.wait(timeout=20)
+                            self.video_process.wait(timeout=30)
                             print(f"Video reproducido exitosamente con {cmd_base[0]}")
                             return True
                         except subprocess.TimeoutExpired:
@@ -328,6 +326,15 @@ class ExperienciaVozApp:
             # Mostrar video con OpenCV
             self.reproducir_video_con_opencv(video_file)
             
+            # Esperar a que termine el audio (que debe durar lo mismo que el video)
+            if hasattr(self, 'audio_process') and self.audio_process:
+                try:
+                    self.audio_process.wait(timeout=30)
+                    print("✅ Audio terminó naturalmente")
+                except subprocess.TimeoutExpired:
+                    self.audio_process.terminate()
+                    print("⏰ Audio timeout, terminando proceso")
+            
         except Exception as e:
             print(f"Error en reproducción combinada: {e}")
             self.reproducir_video_placeholder(video_file)
@@ -379,33 +386,41 @@ class ExperienciaVozApp:
         except Exception as e:
             print(f"Error al iniciar reproductor externo: {e}")
         
-        # Mostrar animación en el área de video
+        # Mostrar animación en el área de video y esperar a que termine el video
         frame_actual = 0
-        duracion_total = 15000  # 15 segundos
+        self.animacion_activa = True
         frames_por_segundo = 8
         delay_frame = 1000 // frames_por_segundo  # ~125ms por frame
         
         def animar_placeholder():
             nonlocal frame_actual
             
-            if frame_actual < (duracion_total // delay_frame):
+            if self.animacion_activa:
                 # Mostrar frame actual
                 texto_frame = frames_placeholder[frame_actual % len(frames_placeholder)]
                 self.video_label.configure(text=texto_frame, fg='#00ff88', image="")
                 
                 frame_actual += 1
                 self.root.after(delay_frame, animar_placeholder)
-            else:
-                # Animación completada
-                # Terminar proceso de video si sigue ejecutándose
-                if hasattr(self, 'video_process') and self.video_process:
-                    try:
-                        self.video_process.terminate()
-                    except:
-                        pass
         
         # Iniciar animación
         animar_placeholder()
+        
+        # Esperar a que termine el proceso de video (27 segundos + margen)
+        if hasattr(self, 'video_process') and self.video_process:
+            try:
+                self.video_process.wait(timeout=30)
+                print("✅ Video externo terminó naturalmente")
+            except subprocess.TimeoutExpired:
+                self.video_process.terminate()
+                print("⏰ Video externo timeout, terminando proceso")
+        
+        # Detener animación
+        self.animacion_activa = False
+    
+    def detener_animacion_placeholder(self):
+        """Detener la animación placeholder"""
+        self.animacion_activa = False
     
     def reproducir_video_con_opencv(self, video_file):
         """Reproducir video usando OpenCV integrado en tkinter"""
