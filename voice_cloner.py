@@ -11,7 +11,7 @@ import time
 import os
 import sys
 import subprocess
-import requests
+from elevenlabs import ElevenLabs
 
 class VoiceCloner:
     """Clase para manejar todo el proceso de clonación de voz"""
@@ -33,11 +33,8 @@ class VoiceCloner:
         self.CHANNELS = 1
         self.RATE = 44100
         
-        # URLs de ElevenLabs
-        self.URL_ADD_VOICE = "https://api.elevenlabs.io/v1/voices/add"
-        self.URL_TTS = "https://api.elevenlabs.io/v1/text-to-speech/"
-        self.URL_DELETE_VOICE = "https://api.elevenlabs.io/v1/voices/"
-        self.URL_GET_VOICES = "https://api.elevenlabs.io/v1/voices"
+        # Initialize ElevenLabs client
+        self.client = ElevenLabs(api_key=self.API_KEY)
         
     def abrir_archivo(self, path):
         """Abrir archivo multiplataforma"""
@@ -162,138 +159,72 @@ class VoiceCloner:
             return None
             
     def clonar_voz(self, archivo_voz):
-        """Subir voz a ElevenLabs y crear clon"""
-        print(f"\n☁️ PASO 3: Clonando voz en ElevenLabs")
+        """Clonar voz usando Instant Voice Cloning con SDK oficial"""
+        print(f"\n🚀 PASO 3: Clonando voz con Instant Voice Cloning (SDK)")
         
         if not os.path.exists(archivo_voz):
             print(f"❌ Archivo {archivo_voz} no encontrado")
             return None
             
         try:
-            headers = {"xi-api-key": self.API_KEY}
+            print("📤 Enviando voz para clonación instantánea...")
             
-            # Preparar datos para subir
-            data = {
-                'name': f'VozTemporal_{int(time.time())}',
-                'labels': '{"accent": "spanish", "description": "Voz temporal para experimento"}'
-            }
+            with open(archivo_voz, 'rb') as audio_file:
+                voice = self.client.voices.ivc.create(
+                    name=f'VozTemporal_{int(time.time())}',
+                    description='Voz temporal para experimento Nodo 2',
+                    files=[audio_file],
+                    remove_background_noise=True
+                )
+                
+            voice_id = voice.voice_id
+            print(f"✅ Voz clonada instantáneamente - ID: {voice_id}")
+            print("   🎯 LISTO: Sin tiempo de espera necesario")
             
-            with open(archivo_voz, 'rb') as f:
-                files = {'files': (archivo_voz, f, 'audio/wav')}
-                
-                print("📤 Subiendo voz para clonación...")
-                response = requests.post(self.URL_ADD_VOICE, headers=headers, data=data, files=files)
-                
-            print(f"📊 Respuesta del servidor: {response.status_code}")
-            
-            if response.status_code == 200:
-                response_json = response.json()
-                voice_id = response_json['voice_id']
-                print(f"✅ Voz clonada exitosamente - ID: {voice_id}")
-                
-                # Esperar a que la voz esté lista
-                return self.esperar_voz_lista(voice_id)
-                
-            else:
-                print(f"❌ Error al clonar voz: {response.status_code}")
-                print(f"   Respuesta: {response.text}")
-                return None
+            return voice_id
                 
         except Exception as e:
-            print(f"❌ Error durante clonación: {e}")
+            print(f"❌ Error durante clonación instantánea: {e}")
             return None
             
     def esperar_voz_lista(self, voice_id):
-        """Esperar a que la voz esté lista para usar con timeout extendido"""
-        print("⏳ Esperando a que la voz esté lista...")
-        
-        headers = {"xi-api-key": self.API_KEY}
-        max_intentos = 60  # Aumentado de 30 a 60 (2 minutos)
-        tiempo_espera = 3  # Aumentado de 2 a 3 segundos
-        
-        for intento in range(max_intentos):
-            try:
-                print(f"   🔍 Verificando estado... ({intento + 1}/{max_intentos})")
-                response = requests.get(f"{self.URL_GET_VOICES}/{voice_id}", headers=headers, timeout=10)
-                
-                if response.status_code == 200:
-                    voice_data = response.json()
-                    status = voice_data.get('status', 'unknown')
-                    
-                    print(f"   📊 Estado actual: {status}")
-                    
-                    if status == 'ready':
-                        print("✅ Voz lista para sintetizar")
-                        return voice_id
-                    elif status == 'failed':
-                        print("❌ La clonación de voz falló en el servidor")
-                        return None
-                    elif status in ['processing', 'training']:
-                        print(f"   🔄 Procesando... quedan {max_intentos - intento - 1} intentos")
-                    
-                    time.sleep(tiempo_espera)
-                    
-                else:
-                    print(f"⚠️ Error al verificar estado: {response.status_code}")
-                    if intento < 5:  # Solo reintentar los primeros 5 errores
-                        time.sleep(tiempo_espera)
-                    else:
-                        print("❌ Demasiados errores de conexión")
-                        return None
-                    
-            except requests.exceptions.Timeout:
-                print(f"⚠️ Timeout en intento {intento + 1}")
-                time.sleep(tiempo_espera)
-            except Exception as e:
-                print(f"⚠️ Error en verificación: {e}")
-                time.sleep(tiempo_espera)
-                
-        print("❌ Timeout: la voz no estuvo lista después de 3 minutos")
-        print("   Esto puede ocurrir si:")
-        print("   - El servidor está sobrecargado")
-        print("   - La grabación tiene problemas de calidad")
-        print("   - Hay problemas de conectividad")
-        return None
+        """FUNCIÓN OBSOLETA: Con Instant Voice Cloning no hay espera"""
+        print("✅ Con Instant Voice Cloning no se requiere tiempo de espera")
+        return voice_id
         
     def sintetizar_voz(self, voice_id):
-        """Generar audio con la voz clonada"""
-        print(f"\n🤖 PASO 4: Sintetizando frase con voz clonada")
+        """Generar audio con la voz clonada usando SDK oficial"""
+        print(f"\n🎵 PASO 4: Sintetizando frase con voz clonada (SDK)")
         
         if not voice_id:
             print("❌ ID de voz no válido")
             return None
             
         try:
-            headers = {
-                "xi-api-key": self.API_KEY,
-                "Content-Type": "application/json"
-            }
+            print("🤖 Generando audio con voz clonada...")
             
-            data = {
-                "text": self.TEXTO_FINAL,
-                "model_id": "eleven_multilingual_v2",
-                "voice_settings": {
-                    "stability": 0.5,
-                    "similarity_boost": 0.5,
-                    "style": 0.0,
+            # Usar el SDK para generar audio
+            audio_generator = self.client.text_to_speech.convert(
+                text=self.TEXTO_FINAL,
+                voice_id=voice_id,
+                model_id="eleven_multilingual_v2",
+                voice_settings={
+                    "stability": 0.4,
+                    "similarity_boost": 0.9,
+                    "style": 0.2,
                     "use_speaker_boost": True
                 }
-            }
+            )
             
-            print("🎵 Generando audio con voz clonada...")
-            response = requests.post(f"{self.URL_TTS}{voice_id}", headers=headers, json=data)
+            # Convertir generator a bytes
+            audio_bytes = b"".join(audio_generator)
             
-            if response.status_code == 200:
-                with open(self.ARCHIVO_FINAL, 'wb') as f:
-                    f.write(response.content)
-                    
-                print(f"✅ Audio generado: {self.ARCHIVO_FINAL}")
-                return self.ARCHIVO_FINAL
+            # Guardar archivo
+            with open(self.ARCHIVO_FINAL, 'wb') as f:
+                f.write(audio_bytes)
                 
-            else:
-                print(f"❌ Error al sintetizar: {response.status_code}")
-                print(f"   Respuesta: {response.text}")
-                return None
+            print(f"✅ Audio generado: {self.ARCHIVO_FINAL}")
+            return self.ARCHIVO_FINAL
                 
         except Exception as e:
             print(f"❌ Error durante síntesis: {e}")
@@ -321,26 +252,21 @@ class VoiceCloner:
             return False
             
     def limpiar_voz(self, voice_id):
-        """Eliminar voz temporal de ElevenLabs"""
-        print(f"\n🗑️ PASO 6: Limpiando datos temporales")
+        """Eliminar voz temporal de ElevenLabs usando SDK"""
+        print(f"\n🧹 PASO 6: Limpiando datos temporales")
         
         if not voice_id:
             print("⚠️ No hay voz para eliminar")
             return True
             
         try:
-            headers = {"xi-api-key": self.API_KEY}
-            response = requests.delete(f"{self.URL_DELETE_VOICE}{voice_id}", headers=headers)
-            
-            if response.status_code == 200:
-                print(f"✅ Voz eliminada del servidor: {voice_id}")
-                return True
-            else:
-                print(f"⚠️ Error al eliminar voz: {response.status_code}")
-                return False
+            self.client.voices.delete(voice_id)
+            print(f"✅ Voz eliminada del servidor: {voice_id}")
+            return True
                 
         except Exception as e:
             print(f"⚠️ Error durante limpieza: {e}")
+            print("   Las voces IVC pueden auto-eliminarse después de un tiempo")
             return False
             
     def ejecutar_experiencia_completa(self):

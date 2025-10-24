@@ -1,13 +1,3 @@
-# =====================================================
-# CLONADOR DE VOZ - ElevenLabs + PyAudio
-# =====================================================
-# Este script:
-# 1. Abre un video de instrucciones
-# 2. Graba audio del micrófono (30s)
-# 3. Sube el audio a ElevenLabs para clonar la voz
-# 4. Sintetiza una frase final usando la voz clonada
-# 5. Limpia la voz temporal de ElevenLabs
-
 import pyaudio
 import wave
 import time
@@ -19,7 +9,7 @@ import requests
 # =====================================================
 # CONFIGURACIÓN
 # =====================================================
-API_KEY = "8007664948e8dd45023e33e533ca8c3782511d7d62913ee436b83bc36ea16746" 
+API_KEY = "757588ed5afa48fbd81af949f67b2757655188c48b5057df968457741d7188fd" 
 TEXTO_FINAL = "Gracias por regalarnos tu voz, ahora tengo el poder de hablar como tú, usarla para los fines que quiera, porque ahora es propiedad de nodo 2."
 ARCHIVO_FINAL = "frase_final_clonada.mp3"
 VIDEO_FILE = 'instrucciones.mp4'
@@ -69,17 +59,6 @@ def reproducir_video_instrucciones():
 
 
 def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS, input_device_index=None):
-    """
-    Graba audio del micrófono durante la duración especificada y guarda como WAV.
-    
-    Args:
-        filename: Nombre del archivo de salida
-        duration: Duración en segundos
-        input_device_index: Índice del dispositivo de entrada (None = por defecto)
-    
-    Returns:
-        str: Ruta del archivo guardado o None si falla
-    """
     print("\n" + "="*60)
     print("INICIANDO GRABACIÓN DE AUDIO")
     print("="*60)
@@ -147,16 +126,6 @@ def grabar_y_almacenar_voz(filename=FILENAME, duration=DURATION_SECONDS, input_d
 
 
 def esperar_voz_lista(voice_id, timeout_segundos=120):
-    """
-    Espera a que la voz clonada esté lista consultando la lista de voces del usuario.
-    
-    Args:
-        voice_id: ID de la voz clonada
-        timeout_segundos: Tiempo máximo de espera
-    
-    Returns:
-        bool: True si la voz está lista, False si timeout
-    """
     headers = {"xi-api-key": API_KEY}
     waited = 0
     interval = 15
@@ -206,20 +175,6 @@ def esperar_voz_lista(voice_id, timeout_segundos=120):
 
 
 def clonar_y_sintetizar_usuario(audio_sample_path, texto_a_sintetizar):
-    """
-    Flujo completo de clonación:
-    1. Sube muestra de voz a ElevenLabs
-    2. Espera a que se procese (opcional)
-    3. Sintetiza texto usando la voz clonada
-    4. Guarda el MP3 resultante
-    
-    Args:
-        audio_sample_path: Ruta al archivo WAV de muestra
-        texto_a_sintetizar: Texto a convertir con la voz clonada
-    
-    Returns:
-        tuple: (archivo_mp3, voice_id) o (None, None) si falla
-    """
     print("\n" + "="*60)
     print("INICIANDO CLONACIÓN DE VOZ")
     print("="*60)
@@ -356,7 +311,6 @@ def clonar_y_sintetizar_usuario(audio_sample_path, texto_a_sintetizar):
 
 
 def eliminar_voz_clonada(voice_id):
-    """Elimina la voz temporal de ElevenLabs para evitar costos."""
     if not voice_id:
         return
     
@@ -423,53 +377,13 @@ if __name__ == "__main__":
         if archivo_mp3 and os.path.exists(archivo_mp3):
             print("\n🔊 PASO 6: Reproducción automática")
             print(f"Reproduciendo tu voz clonada: {archivo_mp3}")
-            
-            # Detectar si estamos en Linux/Raspberry Pi
-            if sys.platform.startswith('linux'):
-                # En Linux: reproducir audio + video warning simultáneamente
-                warning_video = 'warning.mp4'
-                if os.path.exists(warning_video):
-                    print(f"🚨 Reproduciendo warning.mp4 simultáneamente...")
-                    try:
-                        # Reproducir video warning en background
-                        video_process = subprocess.Popen(['xdg-open', warning_video])
-                        time.sleep(1)  # Pequeña pausa para que inicie el video
-                        
-                        # Reproducir audio con mpg123 o aplay
-                        print(f"🎵 Reproduciendo audio clonado...")
-                        try:
-                            # Intentar con mpg123 primero (mejor para MP3)
-                            audio_process = subprocess.Popen(['mpg123', archivo_mp3])
-                            audio_process.wait()  # Esperar a que termine el audio
-                        except FileNotFoundError:
-                            # Si no hay mpg123, intentar con aplay
-                            try:
-                                audio_process = subprocess.Popen(['aplay', archivo_mp3])
-                                audio_process.wait()
-                            except FileNotFoundError:
-                                # Fallback: usar xdg-open para el audio también
-                                subprocess.Popen(['xdg-open', archivo_mp3])
-                                time.sleep(5)  # Tiempo estimado de reproducción
-                        
-                        print("🎬 Reproducción simultánea completada")
-                        
-                    except Exception as e:
-                        print(f"⚠️ Error en reproducción simultánea: {e}")
-                        print("   Intentando reproducción simple...")
-                        abrir_archivo(archivo_mp3)
-                else:
-                    print(f"⚠️ Archivo {warning_video} no encontrado. Solo reproduciendo audio...")
-                    abrir_archivo(archivo_mp3)
-                    time.sleep(3)
-            else:
-                # En macOS/Windows: solo reproducir el audio como antes
-                try:
-                    abrir_archivo(archivo_mp3)
-                    print("🎵 Audio reproduciéndose automáticamente...")
-                    time.sleep(3)
-                except Exception as e:
-                    print(f"⚠️ Error al reproducir automáticamente: {e}")
-                    print("   Puedes reproducir manualmente el archivo generado")
+            try:
+                abrir_archivo(archivo_mp3)
+                print("🎵 Audio reproduciéndose automáticamente...")
+                time.sleep(3)  # Dar tiempo para que inicie la reproducción
+            except Exception as e:
+                print(f"⚠️ Error al reproducir automáticamente: {e}")
+                print("   Puedes reproducir manualmente el archivo generado")
         
         # RESULTADO FINAL
         print("\n" + "="*70)
