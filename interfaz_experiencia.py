@@ -26,6 +26,9 @@ class ExperienciaVozApp:
         self.logica_clonacion = None
         self.proceso_activo = False
         self.video_process = None
+        self.animacion_activa = False
+        self.video_thread = None
+        self.video_terminado = False
         
     def setup_window(self):
         """Configurar la ventana principal en fullscreen"""        
@@ -164,18 +167,27 @@ class ExperienciaVozApp:
             # Crear instancia del clonador
             self.logica_clonacion = LogicaClonacion()
             
-            # PASO 1: Reproducir video en área central
+            # PASO 1: Iniciar video y esperar 12 segundos antes de grabar
             # Dar tiempo para que el frame se renderice completamente
             self.root.update()
             time.sleep(0.5)
             
-            self.reproducir_video_integrado()
+            # Iniciar video en paralelo
+            self.iniciar_video_en_paralelo()
             
-            # PASO 2: Video ya terminó (las funciones de reproducción esperan)
-            # No necesitamos countdown adicional
+            # Esperar 12 segundos mientras se reproduce el video
+            print("⏱️ Esperando 12 segundos antes de iniciar grabación...")
+            for i in range(12, 0, -1):
+                print(f"   🎬 Video reproduciéndose... Grabación en {i}s", end='\r')
+                time.sleep(1)
             
-            # PASO 3: Grabación
+            print("\n🎤 ¡INICIANDO GRABACIÓN mientras el video continúa!")
+            
+            # PASO 2: Grabación (mientras video sigue reproduciéndose)
             archivo_voz = self.grabar_voz_con_visual()
+            
+            # PASO 3: Esperar a que termine el video si aún no terminó
+            self.esperar_fin_video_si_necesario()
             
             if not archivo_voz:
                 raise Exception("Error en la grabación de voz")
@@ -230,6 +242,50 @@ class ExperienciaVozApp:
             except Exception as e:
                 self.reproducir_video_placeholder(video_file)
     
+    def iniciar_video_en_paralelo(self):
+        """Iniciar video en un hilo separado para que no bloquee"""
+        self.video_terminado = False
+        
+        def reproducir_video_thread():
+            try:
+                self.reproducir_video_integrado()
+                self.video_terminado = True
+                print("🎬 Video terminado")
+            except Exception as e:
+                print(f"Error en video thread: {e}")
+                self.video_terminado = True
+        
+        # Crear y ejecutar hilo para el video
+        self.video_thread = threading.Thread(target=reproducir_video_thread)
+        self.video_thread.daemon = True
+        self.video_thread.start()
+        
+    def esperar_fin_video_si_necesario(self):
+        """Esperar a que termine el video si aún está reproduciéndose"""
+        if not self.video_terminado:
+            print("⏰ Esperando a que termine el video...")
+            while not self.video_terminado:
+                time.sleep(0.5)
+        
+        # También esperar procesos de audio/video si existen
+        if hasattr(self, 'audio_process') and self.audio_process:
+            try:
+                self.audio_process.wait(timeout=5)
+                print("🔊 Audio terminado")
+            except subprocess.TimeoutExpired:
+                self.audio_process.terminate()
+                print("🔊 Audio terminado (timeout)")
+        
+        if hasattr(self, 'video_process') and self.video_process:
+            try:
+                self.video_process.wait(timeout=5)
+                print("🎬 Proceso de video terminado")
+            except subprocess.TimeoutExpired:
+                self.video_process.terminate()
+                print("🎬 Proceso de video terminado (timeout)")
+        
+        print("✅ Video completamente terminado")
+    
     def reproducir_video_con_audio_linux(self, video_file):
         """Reproducir video con audio completo en sistemas Linux/Raspberry Pi"""
         try:
@@ -270,19 +326,9 @@ class ExperienciaVozApp:
                             preexec_fn=os.setsid if hasattr(os, 'setsid') else None
                         )
                         
-                        # Esperar a que termine (máximo 30 segundos para video de 27s)
-                        try:
-                            self.video_process.wait(timeout=30)
-                            print(f"Video reproducido exitosamente con {cmd_base[0]}")
-                            return True
-                        except subprocess.TimeoutExpired:
-                            # El video está tomando más tiempo, terminarlo
-                            self.video_process.terminate()
-                            try:
-                                self.video_process.wait(timeout=2)
-                            except subprocess.TimeoutExpired:
-                                self.video_process.kill()
-                            return True
+                        print(f"✅ Video iniciado con {cmd_base[0]}")
+                        # NO esperar aquí - el control de timing es manual ahora
+                        return True
                         
                 except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
                     continue
@@ -326,14 +372,9 @@ class ExperienciaVozApp:
             # Mostrar video con OpenCV
             self.reproducir_video_con_opencv(video_file)
             
-            # Esperar a que termine el audio (que debe durar lo mismo que el video)
-            if hasattr(self, 'audio_process') and self.audio_process:
-                try:
-                    self.audio_process.wait(timeout=30)
-                    print("✅ Audio terminó naturalmente")
-                except subprocess.TimeoutExpired:
-                    self.audio_process.terminate()
-                    print("⏰ Audio timeout, terminando proceso")
+            # NO esperar aquí - el control de timing es manual ahora
+            # El audio_process se gestiona desde esperar_fin_video_si_necesario()
+            print("✅ Video/audio iniciado correctamente")
             
         except Exception as e:
             print(f"Error en reproducción combinada: {e}")
@@ -406,17 +447,9 @@ class ExperienciaVozApp:
         # Iniciar animación
         animar_placeholder()
         
-        # Esperar a que termine el proceso de video (27 segundos + margen)
-        if hasattr(self, 'video_process') and self.video_process:
-            try:
-                self.video_process.wait(timeout=30)
-                print("✅ Video externo terminó naturalmente")
-            except subprocess.TimeoutExpired:
-                self.video_process.terminate()
-                print("⏰ Video externo timeout, terminando proceso")
-        
-        # Detener animación
-        self.animacion_activa = False
+        # NO esperar aquí - el control de timing es manual ahora
+        # La espera se maneja desde esperar_fin_video_si_necesario()
+        print("✅ Video externo iniciado con animación")
     
     def detener_animacion_placeholder(self):
         """Detener la animación placeholder"""
